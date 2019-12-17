@@ -1,0 +1,7 @@
+pydot
+networkx == 2.4
+pytest-cov
+numpy
+pandas
+matplotlib
+recommonmark

@@ -1,0 +1,27 @@
+"""用来enum常用的字符串变量
+"""
+ELC_KEY_NODE_TYPE = '_elc_node_type'
+ELC_KEY_NODE_FUNCTION = '_elc_function'
+ELC_KEY_NODE_PARAMETER = '_elc_parameters'
+ELC_KEY_NODE_LABEL = 'label'
+ELC_KEY_NODE_ID = 'id'
+
+ELC_KEY_EDGE_ID = 'id'
+ELC_KEY_EDGE_SOURCE = 'source'
+ELC_KEY_EDGE_TARGET = 'target'
+ELC_KEY_EDGE_NAME = 'name'
+ELC_KEY_EDGE_SOURCE_OUTPUT_ID = '_elc_source_output_id'
+ELC_KEY_EDGE_TARGET_INPUT_ID = '_elc_target_input_id'
+ELC_KEY_EDGE_DATA = 'data'
+
+ELC_KEY_DATA_DATA = 'data'
+ELC_KEY_DATA_TYPE = 'type'
+ELC_KEY_DATA_TYPE_DATAFRAME = 'dataframe'
+ELC_KEY_DATA_TYPE_SERIES = 'series'
+ELC_KEY_DATA_TYPE_NDARRAY = 'NDARRAY'
+
+ELC_KEY_FUNCTION_FN = 'fn'
+ELC_KEY_FUNCTION_NAME = 'name'
+ELC_KEY_FUNCTION_INPUTS = 'inputs'
+ELC_KEY_FUNCTION_OUTPUTS = 'outputs'
+ELC_KEY_FUNCTION_PARAMETERS = 'parameters'

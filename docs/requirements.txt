@@ -1,0 +1,8 @@
+Sphinx == 1.7.4
+pydot
+networkx == 2.4
+pytest-cov
+numpy
+pandas
+matplotlib
+recommonmark
