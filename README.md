@@ -1,6 +1,7 @@
  # elcflow
  
  [![Build Status](https://travis-ci.com/eggachecat/elc-flow-engine.svg?branch=master)](https://travis-ci.com/eggachecat/elc-flow-engine)
+ [![PyPI version](https://badge.fury.io/py/elc-flow.svg)](https://badge.fury.io/py/elc-flow)
  [![Coverage Status](https://coveralls.io/repos/github/eggachecat/elc-flow-engine/badge.svg)](https://coveralls.io/github/eggachecat/elc-flow-engine)
  [![Documentation Status](https://readthedocs.org/projects/elc-flow-engine/badge/?version=latest)](https://elc-flow-engine.readthedocs.io/en/latest/?badge=latest)
 
