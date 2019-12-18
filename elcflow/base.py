@@ -12,6 +12,10 @@ from elcflow.defs import *
 ELC_FUNCTION_DICT = {}
 
 
+class ELCOptionalInput(str):
+    pass
+
+
 class ELCFunction(object):
     """
         算子使用的函数

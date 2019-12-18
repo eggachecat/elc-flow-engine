@@ -129,3 +129,4 @@ def test_with_file():
     obj_str = json_stringify(_graph_dict)
     with open(os.path.join(test_dir, './test_1_flow_output.json'), 'r', encoding='utf-8') as fp:
         assert obj_str == fp.read()
+test_elc_graph()

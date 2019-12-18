@@ -11,7 +11,7 @@
   
  ## 指令
  ### 生成文档
-  > sphinx-apidoc -o source ../elcflow/ && make html
+  > cd docs && sphinx-apidoc -o source ../elcflow/ && make html  
  ### 测试
   > pytest --cov=elcflow
   
@@ -110,7 +110,7 @@ graph_str = json_stringify(_graph.to_dict())
 # 解析序列化结构到图
 new_graph = ELCGraph.load(json_parse(graph_str))
 # 把结果画出来
-new_graph.plot(show=True, with_state=False)
+new_graph.plot(show=True, with_state=True)
 ```
 
 ![Example Graph 1](./images/example-graph-1.png)
