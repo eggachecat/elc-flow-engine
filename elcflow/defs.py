@@ -33,6 +33,7 @@ ELC_GRAPH_VERSION_V2 = 'v2'
 
 ELC_DICT_PREFIX = '__elc_dict__'
 ELC_DICT_DICT = '__elc_dict__dict_'
+ELC_DICT_INIT_DICT = '__elc_dict__init_dict'
 ELC_DICT_DIFF_ORDER = '__elc_dict__diff_order'
 ELC_DICT_DIFF_CACHE = '__elc_dict__diff_cache'
 ELC_DICT_DIFF_DICT = '__elc_dict__diff_dict'

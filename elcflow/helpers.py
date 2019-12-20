@@ -10,11 +10,22 @@ class ELCJSONEncoder(json.JSONEncoder):
     """主要的序列化器,主要功能就是把一些类型拆成__elc_type__和__elc_data__,后者
     用来记录数据,前者用来恢复数据的时候使用
     """
+
+    def __init__(self, elc_date_unit='ns', **kwargs):
+        super(ELCJSONEncoder, self).__init__(**kwargs)
+        self.elc_date_unit = elc_date_unit
+
     def default(self, obj):
         if isinstance(obj, pd.DataFrame):
+            time_type_str = 'datetime64[{}]'.format(self.elc_date_unit)
+            str_types = obj.dtypes.to_frame('dtypes').reset_index().set_index('index')['dtypes'].astype(str).to_json(). \
+                replace('datetime64[s]', time_type_str).replace('datetime64[ms]', time_type_str). \
+                replace('datetime64[us]', time_type_str).replace('datetime64[ns]', time_type_str)
             return {
                 '__elc_type__': ELC_KEY_DATA_TYPE_DATAFRAME,
-                '__elc_data__': obj.to_dict()
+                '__elc_data__': json.loads(obj.to_json(date_unit=self.elc_date_unit)),
+                '__elc_data_types__': json.loads(str_types),
+                '__elc_data_index_type__': str(obj.index.dtype)
             }
 
         if isinstance(obj, np.ndarray):
@@ -27,7 +38,7 @@ class ELCJSONEncoder(json.JSONEncoder):
 
 
 def json_stringify(dict_obj):
-    return json.dumps(dict_obj, cls=ELCJSONEncoder)
+    return ELCJSONEncoder().encode(dict_obj)
 
 
 def json_parse(dict_obj):
@@ -45,9 +56,12 @@ def json_parse(dict_obj):
                 # elc 的特殊结构
                 _type = v['__elc_type__']
                 _data = v['__elc_data__']
-
                 if _type == ELC_KEY_DATA_TYPE_DATAFRAME:
-                    dict_obj[k] = pd.DataFrame.from_dict(_data)
+                    dict_obj[k] = pd.DataFrame.from_dict(_data)  # type: pd.DataFrame
+                    if '__elc_data_types__' in v:
+                        dict_obj[k] = dict_obj[k].astype(v['__elc_data_types__'])
+                    if '__elc_data_index_type__' in v:
+                        dict_obj[k].index = dict_obj[k].index.astype(v['__elc_data_index_type__'])
                     continue
 
                 if _type == ELC_KEY_DATA_TYPE_NDARRAY:

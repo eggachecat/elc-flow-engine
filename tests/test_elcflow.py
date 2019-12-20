@@ -30,6 +30,7 @@ def test_helpers():
     }
     obj_str = json_stringify(obj)
     obj_dict = json.loads(obj_str)
+    print(obj_dict)
     json_parse(obj_dict)
 
     assert obj_str == json_stringify(json_parse(obj_dict))
@@ -41,6 +42,15 @@ def test_helpers():
                 '__elc_data__': '0'
             }
         })
+
+    # 确保带时间的
+    df = pd.DataFrame(data={'datetime': ['2016/11/12', '2016/11/13'], 'col2': [3, 4]})
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    datetime_dict = {
+        'df': df
+    }
+    obj_dict = json_parse(json.loads(json_stringify(datetime_dict)))
+    pd.testing.assert_frame_equal(df, obj_dict['df'])
 
 
 def test_elc_functions():
@@ -113,24 +123,67 @@ def test_elc_graph_io():
     assert __graph.state.get_outputs()['9d1af6ff']['pow_result'] == 9150625
 
 
-def test_with_file():
-    test_dir = os.path.dirname(__file__)
+def test_elc_dict():
+    dict_ = ELCDict()
+    dict_['x'] = 1
+    dict_['x'] = 'x'
+    dict_['y'] = np.array([1, 2, 3])
+    dict_['z'] = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
 
-    with open(os.path.join(test_dir, './test_1_flow.json'), encoding='utf-8') as fp:
-        _model_dict = json.load(fp)
-    _graph = ELCGraph.create_from_elc_json(_model_dict)
-    _graph.compile()
-    _graph.feed_data_dict({
-        'cae4e6db': np.array([5, 6]),
-        'a7ee6782': np.array([1, 3]),
-    })
-    _graph.execute()
-    _graph_dict = _graph.to_dict()
-    _graph.plot(show=False, with_state=True)
+    assert dict_['x'] == 'x'
+    np.testing.assert_array_equal(dict_['y'], np.array([1, 2, 3]))
+    pd.testing.assert_frame_equal(
+        dict_['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
 
-    obj_str = json_stringify(_graph_dict)
-    with open(os.path.join(test_dir, './test_1_flow_output.json'), 'r', encoding='utf-8') as fp:
-        assert obj_str == fp.read()
+    # diff的cache
+    assert dict_.diff_cache[0] == {'x': 1}
+    assert dict_.diff_cache[1] == {'x': 'x'}
+    np.testing.assert_array_equal(dict_.diff_cache[2]['y'], np.array([1, 2, 3]))
+    pd.testing.assert_frame_equal(
+        dict_.diff_cache[3]['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
+
+    # 做一个merge
+    dict_.merge_diff('merge_key_1')
+    assert len(dict_.diff_cache) == 0
+    assert dict_.diff_dict['merge_key_1']['x'] == 'x'
+    np.testing.assert_array_equal(dict_.diff_dict['merge_key_1']['y'], np.array([1, 2, 3]))
+    pd.testing.assert_frame_equal(
+        dict_.diff_dict['merge_key_1']['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
+
+    dict_['x'] = 'hei-hei'
+    dict_.merge_diff('merge_key_2')
+    assert len(dict_.diff_cache) == 0
+    assert len(dict_.diff_dict.keys()) == 2
+    assert dict_.diff_dict['merge_key_2']['x'] == 'hei-hei'
+
+    dict_replay_1 = dict_.replay(pause_at_key='merge_key_2')
+    assert dict_replay_1['x'] == 'x'
+    np.testing.assert_array_equal(dict_replay_1['y'], np.array([1, 2, 3]))
+    pd.testing.assert_frame_equal(
+        dict_replay_1['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
+
+    dict_replay_all = dict_.replay(init_state={'x': 2333})
+    assert dict_replay_all['x'] == 'hei-hei'
+    np.testing.assert_array_equal(dict_replay_all['y'], np.array([1, 2, 3]))
+    pd.testing.assert_frame_equal(
+        dict_replay_all['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
+
+    # 测试序列化
+    dict_str_1 = json_stringify(dict_.to_dict())
+    assert dict_str_1 == json_stringify(dict_.load_from_dict(json_parse(dict_str_1)).to_dict())
+    dict_from_str = dict_.load_from_dict(json_parse(dict_str_1))
+    assert dict_from_str['x'] == 'hei-hei'
+    np.testing.assert_array_equal(dict_from_str['y'], np.array([1, 2, 3]))
+
+    # FIXME: 现在一些类型是会丢失的
+    pd.testing.assert_frame_equal(
+        dict_from_str['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+    )
 
 
 if __name__ == '__main__':
@@ -139,8 +192,16 @@ if __name__ == '__main__':
     #     format='%(asctime)s %(name)-12s #%(lineno)d@%(funcName)s() %(levelname)-8s %(message)s',
     #     datefmt='%m-%d %H:%M',
     # )
-    # test_helpers()
+    test_helpers()
     # test_elc_functions()
     # test_elc_graph()
     # test_elc_graph_io()
-    test_with_file()
+    test_elc_dict()
+
+    df = pd.DataFrame(data={'col1': [1.0, 2.0], 'col2': [3, 4]})
+    print(df.dtypes.to_frame('dtypes').reset_index().set_index('index')['dtypes'].astype(str).to_dict())
+    print(df.index.dtype)
+    # print(df.dtypes)
+    exit()
+    dtype_dict = df.dtypes.to_frame('dtypes').reset_index().set_index('index')['dtypes'].astype(str).to_dict()
+    print(pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]}).astype(dtype_dict))

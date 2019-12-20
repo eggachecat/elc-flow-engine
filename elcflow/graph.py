@@ -21,9 +21,10 @@ class ELCDict(object):
     注意我们并没有深度匹配diff算法
     """
 
-    def __init__(self, merge_every_diff=False, track_diff=False, **kwargs):
+    def __init__(self, merge_every_diff=False, track_diff=True, init_dict=None, **kwargs):
         # 也许order和dict可以并在一起
-        self.dict_ = {}
+        self.dict_ = {} if init_dict is None else copy.deepcopy(init_dict)
+        self.init_dict = {}
         self.diff_dict = {}
         self.diff_order = []
         self.diff_cache = []
@@ -78,7 +79,7 @@ class ELCDict(object):
         # 重置cache
         self.diff_cache = []
 
-    def replay(self, init_state, pause_at_key=None, pause_at_order=None):
+    def replay(self, init_state=None, pause_at_key=None, pause_at_order=None):
         """
         重播diff:
         :param init_state:
@@ -86,6 +87,8 @@ class ELCDict(object):
         :param pause_at_order: 第几个需要暂停
         :return: 重播的state的结果
         """
+        if init_state is None:
+            init_state = self.init_dict
         state = copy.deepcopy(init_state)  # type: dict
         for i, key in enumerate(self.diff_order):
             if pause_at_order == i or pause_at_key == key:
@@ -109,7 +112,8 @@ class ELCDict(object):
             ELC_DICT_DIFF_DICT: self.diff_dict,
             ELC_DICT_DEFAULT_KEY: self.default_key,
             ELC_DICT_MERGE_EVERY_STEP: self.merge_every_step,
-            ELC_DICT_TRACK_DIFF: self.track_diff
+            ELC_DICT_TRACK_DIFF: self.track_diff,
+            ELC_DICT_INIT_DICT: self.init_dict
         }
 
     @classmethod
@@ -522,9 +526,3 @@ class ELCGraph(LoggingMixin):
             plt.show()
 
         return g
-
-
-if __name__ == '__main__':
-    _a = ELCDict()
-    _a['a'] = 5
-    print(_a)
