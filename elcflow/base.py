@@ -60,6 +60,15 @@ def register_elc_function(outputs, inputs=None, name=None, parameters=None):
     return _d
 
 
+def register_elc_function_v2(inputs=None, name=None, parameters=None):
+    def _d(fn):
+        _inputs = inputs if inputs is not None else list([p[1].name for p in inspect.signature(fn).parameters.items()])
+        _f_name = name if name is not None else fn.__name__
+        ELC_FUNCTION_DICT[_f_name] = ELCFunction(fn=fn, name=_f_name, inputs=_inputs, parameters=parameters)
+        return ELC_FUNCTION_DICT[_f_name]
+    return _d
+
+
 class ELCData(object):
     """整个Graph上的数据, 不同数据对应了不同的序列化函数
     """

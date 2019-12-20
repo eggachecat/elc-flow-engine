@@ -11,7 +11,7 @@ import networkx as nx
 from elcflow.base import ELCDataPlaceholder, ELCOperator, ELCNode, ELCEdge
 from elcflow.defs import *
 from elcflow.builtin_operators import *
-from elcflow.helpers import json_stringify
+from elcflow.helpers import json_stringify, json_parse
 from elcflow.utils import LoggingMixin
 
 
@@ -31,6 +31,18 @@ class ELCDict(object):
         self.default_key = 0
         self.merge_every_step = merge_every_diff
         self.track_diff = track_diff
+
+    def force_update(self, dict_obj):
+        """
+        强制更新 不记录修改 可能初始化的时候有用
+        :param dict_obj:
+        :return:
+        """
+        if isinstance(dict_obj, dict):
+            # 其余情况就是None
+            return self.dict_.update(dict_obj)
+
+        assert dict_obj is None, "Unsupported type to update dict: {}".format(type(dict_obj))
 
     def update(self, dict_obj):
         """
@@ -156,6 +168,12 @@ class ELCState:
     def get_outputs(self):
         return self._outputs
 
+    def set_globals(self, dict_obj):
+        self._globals.force_update(dict_obj)
+
+    def set_outputs(self, dict_obj):
+        self._outputs.force_update(dict_obj)
+
     @classmethod
     def load_from_dict(cls, _globals, _outputs):
         instance = cls()
@@ -192,7 +210,7 @@ class ELCGraph(LoggingMixin):
         self.graph = nx.DiGraph()
         self._debug = kwargs.get("debug", False)
         self._cache = kwargs.get("cache", True)
-        self._elc_graph_version = kwargs.get(ELC_GRAPH_VERSION, ELC_GRAPH_VERSION_V1)
+        self.elc_graph_version = kwargs.get(ELC_GRAPH_VERSION, ELC_GRAPH_VERSION_V1)
 
         self.state = ELCState()
 
@@ -253,6 +271,11 @@ class ELCGraph(LoggingMixin):
             'ip': self.ip,
             'elc_json': self.elc_json
         }
+
+    def set_state(self, _globals=None, _outputs=None):
+        # 把当前状态
+        self.state.set_globals(_globals)
+        self.state.set_outputs(_outputs)
 
     @classmethod
     def create_from_elc_json(cls, elc_json, **kwargs):
@@ -395,12 +418,12 @@ class ELCGraph(LoggingMixin):
                     # 把数据写到边上
                     _edge.data.set_data(_data)
 
-            if self._elc_graph_version == ELC_GRAPH_VERSION_V1:
+            if self.elc_graph_version == ELC_GRAPH_VERSION_V1:
                 _inputs_dict.update(_node.parameters)
                 self.log.debug("_inputs_list={} and _inputs_dict={}".format(_inputs_list, _inputs_dict))
                 _outputs = _node.fn(*_inputs_list, **_inputs_dict)
 
-            elif self._elc_graph_version == ELC_GRAPH_VERSION_V2:
+            elif self.elc_graph_version == ELC_GRAPH_VERSION_V2:
                 self.log.debug(
                     "_inputs_list={} and global_states={} and result={} and parameters={}".format(
                         _inputs_list, self.state.get_globals(), _inputs_dict, _node.parameters
@@ -412,16 +435,21 @@ class ELCGraph(LoggingMixin):
                     parameters=_node.parameters  # node的parameters
                 )
             else:
-                raise ValueError("Unknown version: {}".format(self._elc_graph_version))
+                raise ValueError("Unknown version: {}".format(self.elc_graph_version))
 
             # 我们把globals的变换记录下来
             # globals的变换被算在当前执行的这个node上
             self.state.get_globals().merge_diff(key=_node_id)
 
-            if not isinstance(_outputs, tuple):
-                # TODO: 以下代码对于mapping有用
-                # 我们规定只能返回tuple, 否则无法区分到底[1, 2, 3]是3个整数类型的结果还是1个list的结果
-                _outputs = [_outputs]
+            if isinstance(_outputs, dict):
+                # V1的情况目前这个情况只会走这个分支
+                self.log.debug("set output for {} with {}".format(_node_id, _outputs))
+                self.state.get_outputs().update({_node_id: _outputs})
+            else:
+                if not isinstance(_outputs, tuple):
+                    # TODO: 以下代码对于mapping有用
+                    # 我们规定只能返回tuple, 否则无法区分到底[1, 2, 3]是3个整数类型的结果还是1个list的结果
+                    _outputs = [_outputs]
                 # 确保长度是一样的
                 assert len(_node.fn.outputs) == len(_outputs)
                 # 把这个node的输出结果存到state里(按照实现定好的名称)
@@ -431,24 +459,9 @@ class ELCGraph(LoggingMixin):
                 self.state.get_outputs().update({
                     _node_id: dict([(_node.fn.outputs[i], _outputs[i]) for i in range(len(_outputs))])
                 })
-            elif isinstance(_outputs, dict):
-                # V1的情况目前这个情况只会走这个分支
-                self.log.debug("set output for {} with {}".format(_node_id, _outputs))
-                self.state.get_outputs().update({_node_id: _outputs})
-            else:
-                raise TypeError('Unsupported return type: {}'.format(type(_outputs)))
 
             # 下一条指令
             self.ip += 1
-
-    def set_state(self, state):
-        """
-        强行更新state(也许在debug的时候有用)
-        :param state:
-        :return:
-        """
-        # 如果从错误中回来可能会用到
-        self.state.update(state)
 
     def add_node(self, node):
         """
@@ -479,7 +492,7 @@ class ELCGraph(LoggingMixin):
         self.edge_dict[edge.id] = edge
         self.graph.add_edge(edge.source_id, edge.target_id, id=edge.id)
 
-    def plot(self, show=False, with_state=False):
+    def plot(self, show=False, with_state=False, test_mode=False):
         """
 
         :param show: 是否要显示
@@ -519,10 +532,20 @@ class ELCGraph(LoggingMixin):
             g.add_edge(edge)
 
         if show:
-            png = g.create_png()
+            png = g.create_png(prog=['dot', '-Gsize=9,16', '-Gdpi=350'])
             sio = BytesIO(png)
             img = mpimg.imread(sio)
-            plt.imshow(img, aspect="equal")
-            plt.show()
+            if self.elc_graph_version == ELC_GRAPH_VERSION_V2:
+                plt.figure(figsize=(6, 9))
+                ax_left = plt.subplot(1, 2, 1)
+                ax_left.imshow(img)
+                ax_right = plt.subplot(1, 2, 2)
+                ax_right.axis([0, 10, 0, 10])
+                ax_right.text(0, 0, json_stringify(self.state.get_globals().to_dict(), indent=2), wrap=True)
+                ax_right.axis('off')
+            else:
+                plt.imshow(img)
+            if not test_mode:
+                plt.show()
 
         return g

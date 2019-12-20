@@ -37,8 +37,8 @@ class ELCJSONEncoder(json.JSONEncoder):
         return super(ELCJSONEncoder, self).default(obj)
 
 
-def json_stringify(dict_obj):
-    return ELCJSONEncoder().encode(dict_obj)
+def json_stringify(dict_obj, *args, **kwargs):
+    return ELCJSONEncoder(*args, **kwargs).encode(dict_obj)
 
 
 def json_parse(dict_obj):

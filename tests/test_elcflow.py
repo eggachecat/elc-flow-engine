@@ -180,13 +180,73 @@ def test_elc_dict():
     assert dict_from_str['x'] == 'hei-hei'
     np.testing.assert_array_equal(dict_from_str['y'], np.array([1, 2, 3]))
 
-    # FIXME: 现在一些类型是会丢失的
     pd.testing.assert_frame_equal(
         dict_from_str['z'], pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
     )
 
+    # 默认的key是否可以工作
+    dict_2_ = ELCDict()
+    dict_2_['x'] = 1
+    dict_2_.merge_diff()
+    assert dict_2_.diff_dict[0] == {'x': 1}
+
+    dict_2_['x'] = 2
+    with assert_raises(KeyError):
+        dict_2_.merge_diff(0)
+
+    # merge_every_step是否工作
+    dict_3_ = ELCDict(merge_every_diff=True)
+    dict_3_['x'] = 1
+    dict_3_['x'] = 2
+    dict_3_['x'] = 3
+    assert len(dict_3_.diff_dict.keys()) == 3
+    assert dict_3_.diff_dict[1] == {'x': 2}
+
+    dict_4_ = ELCDict.load_from_dict({'x': 1})
+    assert dict_4_['x'] == 1
+
+
+_model_2_globals = {
+    "global_variable_1": 5,
+    "multiplier": 3
+}
+
+_model_dict_v2 = {
+    "nodes": [
+        {"label": "data-selector", "id": "0ea5a129", "_elc_node_type": 'operator', "_elc_function": 'elc_select_data_v2', "_elc_parameters": {"key": "global_variable_1"}},
+        {"label": "add_plus_plus", "id": "8ac87236", "_elc_node_type": 'operator', "_elc_function": "elc_add_plus_plus_v2"},
+        {"label": "multiplier x", "id": "0d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_mul_v2"},
+        {"label": "pow_for_mul", "id": "9d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_pow_for_mul_v2", "_elc_parameters": {"a": 4}},
+    ],
+    "edges": [
+        {"source": "0ea5a129", "target": "8ac87236", "id": "74bc97ca"},
+        {"source": "8ac87236", "target": "0d1af6ff", "id": "d3645364"},
+        {"source": "0d1af6ff", "target": "9d1af6ff", "id": "b0eb9a9b"},
+    ]
+}
+
+
+def test_graph_v2():
+    _graph = ELCGraph.create_from_elc_json(_model_dict_v2, elc_graph_version=ELC_GRAPH_VERSION_V2)
+    assert _graph.elc_graph_version == ELC_GRAPH_VERSION_V2
+
+    _graph.set_state(_globals=_model_2_globals)
+    _graph.compile()
+    _graph.execute()
+    _graph.plot(show=True, with_state=True, test_mode=True)
+    # _graph.plot(show=True, with_state=False)
+    # assert _graph.state.get_outputs()['9d1af6ff']['pow_result'] == 9150625
+
+
+# def test_graph_exceptions():
+#     # 类型不对应该好搓
+#     with assert_raises(TypeError):
+#         pass
+
 
 if __name__ == '__main__':
+    test_graph_v2()
+    exit()
     # logging.basicConfig(
     #     level=logging.DEBUG,
     #     format='%(asctime)s %(name)-12s #%(lineno)d@%(funcName)s() %(levelname)-8s %(message)s',
