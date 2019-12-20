@@ -47,3 +47,8 @@ def elc_pow_for_mul_v2(global_states, result, parameters):
     _result = global_states['elc_mul_v2_result'] ** int(parameters['a'])
     global_states['elc_pow_for_mul_v2_result'] = _result
     return {'return': _result}
+
+
+@register_elc_function_v2(name='elc_output_v2')
+def elc_output_v2(global_states, result, parameters=None):
+    return {'return': None}

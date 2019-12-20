@@ -217,11 +217,14 @@ _model_dict_v2 = {
         {"label": "add_plus_plus", "id": "8ac87236", "_elc_node_type": 'operator', "_elc_function": "elc_add_plus_plus_v2"},
         {"label": "multiplier x", "id": "0d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_mul_v2"},
         {"label": "pow_for_mul", "id": "9d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_pow_for_mul_v2", "_elc_parameters": {"a": 4}},
+        {"label": "output", "id": "921af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_output_v2"},
+
     ],
     "edges": [
         {"source": "0ea5a129", "target": "8ac87236", "id": "74bc97ca"},
         {"source": "8ac87236", "target": "0d1af6ff", "id": "d3645364"},
         {"source": "0d1af6ff", "target": "9d1af6ff", "id": "b0eb9a9b"},
+        {"source": "9d1af6ff", "target": "921af6ff", "id": "b8eb459b"},
     ]
 }
 
@@ -233,8 +236,12 @@ def test_graph_v2():
     _graph.set_state(_globals=_model_2_globals)
     _graph.compile()
     _graph.execute()
-    _graph.plot(show=True, with_state=True, test_mode=True)
+    _graph.plot(show=True, with_state=True)
     # _graph.plot(show=True, with_state=False)
+    assert _graph.state.get_outputs()['0ea5a129']['return'] == 5
+    assert _graph.state.get_outputs()['8ac87236']['return'] == 6
+    assert _graph.state.get_outputs()['0d1af6ff']['return'] == 18
+    assert _graph.state.get_outputs()['9d1af6ff']['return'] == 104976
     # assert _graph.state.get_outputs()['9d1af6ff']['pow_result'] == 9150625
 
 
