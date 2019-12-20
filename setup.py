@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='UTF-8') as fh:
 
 setuptools.setup(
     name="elc-flow",
-    version="0.1.0",
+    version="0.2.0",
     author="sunao",
     author_email="sunao_0626@hotmail.com",
     description="A graph flow engine for East Low Carbon",
