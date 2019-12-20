@@ -3,7 +3,7 @@
  [![Build Status](https://travis-ci.com/eggachecat/elc-flow-engine.svg?branch=master)](https://travis-ci.com/eggachecat/elc-flow-engine)
  [![PyPI version](https://badge.fury.io/py/elc-flow.svg)](https://badge.fury.io/py/elc-flow)
  [![Coverage Status](https://coveralls.io/repos/github/eggachecat/elc-flow-engine/badge.svg)](https://coveralls.io/github/eggachecat/elc-flow-engine)
- [![Documentation Status](https://readthedocs.org/projects/elc-flow-engine/badge/?version=latest)](https://elc-flow-engine.readthedocs.io/en/latest/?badge=latest)
+ [![Documentation Status](https://readthedocs.org/projects/elc-flow-engine/badge/?version=latest)](https://elc-flow-engine.readthedocs.io)
 
  
  ## 介绍
@@ -14,8 +14,115 @@
   > cd docs && sphinx-apidoc -o source ../elcflow/ && make html  
  ### 测试
   > pytest --cov=elcflow
-  
- ## 使用
+ 
+ ## 使用[V2]
+ ### 注册算子
+ 使用`register_elc_function_v2`来注册是一个算子,算子包含以下属性:
+ - name
+    - 唯一的标识符,用来找到这个算子
+ - parameters
+    - 字典类型, 包含了默认的参数
+    - 主要适用于例如指数函数,其指数当作参数
+        - 给指数2 -> 平方
+        
+算子的输入和输出被严格规定
+    - 输入
+        - global_states
+            - 全局的一个state是一个字典
+        - result
+            - 前一个节点的结果
+        - parameters
+            - 参数
+    - 输出
+        - 一定是一个字典
+ ### 用例
+```python
+from elcflow.base import register_elc_function_v2
+
+@register_elc_function_v2(name='elc_select_data_v2')
+def elc_select_data_v2(global_states, result, parameters):
+    return {'return': global_states[parameters['key']]}
+
+
+@register_elc_function_v2(name='elc_add_plus_plus_v2')
+def elc_add_plus_plus_v2(global_states, result, parameters):
+    return {'return': result['return'] + 1}
+
+
+@register_elc_function_v2(name='elc_mul_v2')
+def elc_mul_v2(global_states, result, parameters):
+    _result = result['return'] * int(global_states['multiplier'])
+    global_states['elc_mul_v2_result'] = _result
+    return {'return': _result}
+
+
+@register_elc_function_v2(name='elc_pow_for_mul_v2')
+def elc_pow_for_mul_v2(global_states, result, parameters):
+    _result = global_states['elc_mul_v2_result'] ** int(parameters['a'])
+    global_states['elc_pow_for_mul_v2_result'] = _result
+    return {'return': _result}
+```
+
+### 图
+#### 数据结构
+图主要由以下两部分组成
+- nodes
+    - 包含了所有的节点的信息
+    - id
+    - label
+    - 类型
+        - 数据类型
+        - 算子类型
+    - 其他
+        - 例如算子的参数
+- edges
+    - 有方向的边,从一个node的数据流向另一个node
+    - id
+    - source
+        - 起始节点的id
+    - target
+        - 结束节点的id
+#### 例子      
+```python
+from elcflow.graph import *
+from elcflow.graph import *
+from elcflow.helpers import json_stringify, json_parse
+
+_model_2_globals = {
+    "global_variable_1": 5,
+    "multiplier": 3
+}
+
+_model_dict_v2 = {
+    "nodes": [
+        {"label": "data-selector", "id": "0ea5a129", "_elc_node_type": 'operator', "_elc_function": 'elc_select_data_v2', "_elc_parameters": {"key": "global_variable_1"}},
+        {"label": "add_plus_plus", "id": "8ac87236", "_elc_node_type": 'operator', "_elc_function": "elc_add_plus_plus_v2"},
+        {"label": "multiplier x", "id": "0d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_mul_v2"},
+        {"label": "pow_for_mul", "id": "9d1af6ff", "_elc_node_type": 'operator', "_elc_function": "elc_pow_for_mul_v2", "_elc_parameters": {"a": 4}},
+    ],
+    "edges": [
+        {"source": "0ea5a129", "target": "8ac87236", "id": "74bc97ca"},
+        {"source": "8ac87236", "target": "0d1af6ff", "id": "d3645364"},
+        {"source": "0d1af6ff", "target": "9d1af6ff", "id": "b0eb9a9b"},
+    ]
+}
+# 从json结构parse成图
+_graph = ELCGraph.create_from_elc_json(_model_dict_v2, elc_graph_version=ELC_GRAPH_VERSION_V2)
+# 并且初始化global
+_graph.set_state(_globals=_model_2_globals)
+# 编译图: 包含了对于节点拓扑排序并且初始化的工作
+_graph.compile()
+# 执行图
+_graph.execute()
+# 画图
+_graph.plot(show=True, with_state=True)
+
+```
+
+![Example Graph 2](./images/example-graph-2.png)
+ 
+ 
+ ## 使用[V1]
  ### 注册算子
  使用`register_elc_function`来注册是一个算子,算子包含以下属性:
  - name
@@ -33,6 +140,7 @@
         - 给指数2 -> 平方
  ### 用例
 ```python
+from elcflow.base import register_elc_function
 @register_elc_function(outputs=['elc_output'], name='elc_exp_and_plus', parameters={'x': 5})
 # 一个例子
 # 表明注册了一个名称为elc_exp_and_plus算子

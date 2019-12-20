@@ -532,20 +532,13 @@ class ELCGraph(LoggingMixin):
             g.add_edge(edge)
 
         if show:
-            png = g.create_png(prog=['dot', '-Gsize=9,16', '-Gdpi=350'])
+            png = g.create_png(prog=['dot', '-Gsize=9,9', '-Gdpi=350'])
             sio = BytesIO(png)
             img = mpimg.imread(sio)
-            if self.elc_graph_version == ELC_GRAPH_VERSION_V2:
-                plt.figure(figsize=(6, 9))
-                ax_left = plt.subplot(1, 2, 1)
-                ax_left.imshow(img)
-                ax_right = plt.subplot(1, 2, 2)
-                ax_right.axis([0, 10, 0, 10])
-                ax_right.text(0, 0, json_stringify(self.state.get_globals().to_dict(), indent=2), wrap=True)
-                ax_right.axis('off')
-            else:
-                plt.imshow(img)
+            plt.imshow(img)
             if not test_mode:
+                plt.axis('off')
+                plt.tight_layout()
                 plt.show()
 
         return g
