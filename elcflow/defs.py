@@ -25,3 +25,17 @@ ELC_KEY_FUNCTION_NAME = 'name'
 ELC_KEY_FUNCTION_INPUTS = 'inputs'
 ELC_KEY_FUNCTION_OUTPUTS = 'outputs'
 ELC_KEY_FUNCTION_PARAMETERS = 'parameters'
+
+ELC_GRAPH_VERSION = 'elc_graph_version'
+ELC_GRAPH_VERSION_V1 = 'v1'
+# 函数的输入规定好: _global, _result, parameters
+ELC_GRAPH_VERSION_V2 = 'v2'
+
+ELC_DICT_PREFIX = '__elc_dict__'
+ELC_DICT_DICT = '__elc_dict__dict_'
+ELC_DICT_DIFF_ORDER = '__elc_dict__diff_order'
+ELC_DICT_DIFF_CACHE = '__elc_dict__diff_cache'
+ELC_DICT_DIFF_DICT = '__elc_dict__diff_dict'
+ELC_DICT_DEFAULT_KEY = '__elc_dict__default_key'
+ELC_DICT_MERGE_EVERY_STEP = '__elc_dict__merge_every_step'
+ELC_DICT_TRACK_DIFF = '__elc_dict__track_diff'

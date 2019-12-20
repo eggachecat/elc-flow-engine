@@ -1,3 +1,4 @@
+import logging
 import os
 
 import math
@@ -88,7 +89,7 @@ def test_elc_graph():
     _graph.execute()
     _graph.plot(show=False, with_state=True)
     _graph.plot(show=False, with_state=False)
-    assert _graph.state['9d1af6ff']['pow_result'] == 9150625
+    assert _graph.state.get_outputs()['9d1af6ff']['pow_result'] == 9150625
 
 
 def test_elc_graph_io():
@@ -102,13 +103,14 @@ def test_elc_graph_io():
     _graph_dict = _graph.to_dict()
     obj_str = json_stringify(_graph_dict)
     print(obj_str)
-    __graph = ELCGraph.load(json_parse(json.loads(obj_str)))
+    __graph = ELCGraph.load_from_dict(json_parse(json.loads(obj_str)))
     __graph.compile()
+    print(__graph.state)
     __graph.execute()
     __graph.plot(show=False, with_state=False)
     __graph.plot(show=False, with_state=True)
 
-    assert __graph.state['9d1af6ff']['pow_result'] == 9150625
+    assert __graph.state.get_outputs()['9d1af6ff']['pow_result'] == 9150625
 
 
 def test_with_file():
@@ -129,4 +131,16 @@ def test_with_file():
     obj_str = json_stringify(_graph_dict)
     with open(os.path.join(test_dir, './test_1_flow_output.json'), 'r', encoding='utf-8') as fp:
         assert obj_str == fp.read()
-test_elc_graph()
+
+
+if __name__ == '__main__':
+    # logging.basicConfig(
+    #     level=logging.DEBUG,
+    #     format='%(asctime)s %(name)-12s #%(lineno)d@%(funcName)s() %(levelname)-8s %(message)s',
+    #     datefmt='%m-%d %H:%M',
+    # )
+    # test_helpers()
+    # test_elc_functions()
+    # test_elc_graph()
+    # test_elc_graph_io()
+    test_with_file()
