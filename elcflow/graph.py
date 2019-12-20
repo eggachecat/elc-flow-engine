@@ -492,7 +492,7 @@ class ELCGraph(LoggingMixin):
         self.edge_dict[edge.id] = edge
         self.graph.add_edge(edge.source_id, edge.target_id, id=edge.id)
 
-    def plot(self, show=False, with_state=False, test_mode=False):
+    def plot(self, show=False, with_state=False):
         """
 
         :param show: 是否要显示
@@ -534,11 +534,8 @@ class ELCGraph(LoggingMixin):
         if show:
             png = g.create_png(prog=['dot', '-Gsize=9,9', '-Gdpi=350'])
             sio = BytesIO(png)
-            img = mpimg.imread(sio)
-            plt.imshow(img)
-            if not test_mode:
-                plt.axis('off')
-                plt.tight_layout()
-                plt.show()
+            plt.imshow(mpimg.imread(sio))
+            plt.axis('off')
+            plt.show()
 
         return g

@@ -236,7 +236,7 @@ def test_graph_v2():
     _graph.set_state(_globals=_model_2_globals)
     _graph.compile()
     _graph.execute()
-    _graph.plot(show=True, with_state=True)
+    _graph.plot(show=False, with_state=True)
     # _graph.plot(show=True, with_state=False)
     assert _graph.state.get_outputs()['0ea5a129']['return'] == 5
     assert _graph.state.get_outputs()['8ac87236']['return'] == 6
